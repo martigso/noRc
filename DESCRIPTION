@@ -1,11 +1,16 @@
 Package: noRc
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Norwegian Roll Call Analysis Tools
+Version: 0.1
+Authors@R: person("Martin", "Soyland", email = "martin.soyland@stv.uio.no",
+                  role = c("aut", "cre"))
+Description: Package for retriving information from the Norwegian Parliament.
+Depends: R (>= 3.1.0)
 Encoding: UTF-8
+Imports: rvest, httr, parallel, stortingscrape
+Suggests: imager, rmarkdown, stringr, dplyr
+License: GPL (>= 3)
 LazyData: true
+VignetteBuilder: knitr
+RoxygenNote: 7.1.2
+Roxygen: list(markdown = TRUE)
