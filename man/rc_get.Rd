@@ -6,18 +6,20 @@
 \usage{
 rc_get(voteid = NA, include_voteinfo = FALSE, include_mpinfo = FALSE)
 }
-\value{
-A data.frame with the following variables:\tabular{ll}{
-    \tab  \cr
-   \strong{response_date} \tab Date of data retrieval \cr
-   \strong{version} \tab Data version from the API \cr
-   \strong{vote_id} \tab Id of vote \cr
-   \strong{mp_id} \tab MP id \cr
-   \strong{party_id} \tab Party id \cr
-   \strong{vote} \tab Vote: for, mot (against), ikke_tilstede (absent) \cr
-   \strong{permanent_sub_for} \tab Id of the MP originally holding the seat, if the substitute is permanent \cr
-   \strong{sub_for} \tab Id of the MP originally holding the seat \cr
+\arguments{
+\item{voteid}{Integer. One or more vote ids to retreive from the API.}
+
+\item{include_voteinfo}{Logical. Whether or not to include information on the vote.}
+
+\item{include_mpinfo}{Logical. Wheteher or not to include information on the MPs.}
+
+\item{good_manners}{Numeric. Seconds to wait between calls to the API.
+Should be used if \code{voteid} is a vector longer than 1.}
+
+\item{...}{Other arguments passed to \code{rollcall()}}
 }
+\value{
+A rollcall object with the specified votes
 }
 \description{
 A function for retrieving which MPs voted what on a single vote
@@ -27,6 +29,7 @@ in the Norwegian parliament.
 \dontrun{
 
 v <- rc_get(12345)
+summary(v, verbose = TRUE)
 
 }
 

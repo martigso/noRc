@@ -5,28 +5,22 @@
 #'
 #' @usage rc_get(voteid = NA, include_voteinfo = FALSE, include_mpinfo = FALSE)
 #'
-#' @return A data.frame with the following variables:
+#' @param voteid Integer. One or more vote ids to retreive from the API.
+#' @param include_voteinfo Logical. Whether or not to include information on the vote.
+#' @param include_mpinfo Logical. Wheteher or not to include information on the MPs.
+#' @param good_manners Numeric. Seconds to wait between calls to the API.
+#' Should be used if `voteid` is a vector longer than 1.
+#' @param ... Other arguments passed to `rollcall()`
 #'
-#'    |                       |                                                                          |
-#'    |:----------------------|:-------------------------------------------------------------------------|
-#'    | **response_date**     | Date of data retrieval                                                   |
-#'    | **version**           | Data version from the API                                                |
-#'    | **vote_id**           | Id of vote                                                               |
-#'    | **mp_id**             | MP id                                                                    |
-#'    | **party_id**          | Party id                                                                 |
-#'    | **vote**              | Vote: for, mot (against), ikke_tilstede (absent)                         |
-#'    | **permanent_sub_for** | Id of the MP originally holding the seat, if the substitute is permanent |
-#'    | **sub_for**           | Id of the MP originally holding the seat                                 |
-#'
-#' @md
+#' @return A rollcall object with the specified votes
 #'
 #' @seealso [stortingscrape::get_vote()]
-#'
 #'
 #' @examples
 #' \dontrun{
 #'
 #' v <- rc_get(12345)
+#' summary(v, verbose = TRUE)
 #'
 #' }
 #'
@@ -36,9 +30,18 @@
 #'
 rc_get <- function(voteid = NA,
                    include_voteinfo = FALSE,
-                   include_mpinfo = FALSE){
+                   include_mpinfo = FALSE,
+                   good_manners = 2){
 
-  raw_result <- get_result_vote(voteid)
+  raw_result <- list()
+  for(i in as.character(voteid)){
+    raw_result[[i]] <- get_result_vote(i)
+
+    Sys.sleep(good_manners)
+  }
+
+  raw_result <- do.call(rbind, raw_result)
+
 
   raw_result$vote[which(raw_result$vote == "ikke_tilstede")] <- -1
   raw_result$vote[which(raw_result$vote == "for")] <- 1
@@ -76,7 +79,7 @@ rc_get <- function(voteid = NA,
                  vote.names = gsub("voteid", "", colnames(raw_result_wide)),
                  legis.data = legisdata,
                  vote.data = votedata,
-                 desc = paste0("Vote results for vote '", voteid, "' in Stortinget"),
+                 desc = paste0("Vote results for votes in Stortinget"),
                  source = "data.stortinget.no")
 
 
