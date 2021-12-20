@@ -1,0 +1,12 @@
+citHeader("To cite stortingscrape in publications use:")
+
+citEntry(
+  entry    = "Manual",
+  title    = "noRc: An R package for structuring and analyses of Norwegian roll call data",
+  author   = "Martin S{\\o}yland",
+  year     = 2021,
+  url      = "https://github.com/martigso/noRc",
+  textVersion = paste(
+"TBD"
+  )
+)

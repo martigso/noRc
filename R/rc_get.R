@@ -24,7 +24,7 @@
 #'
 #' }
 #'
-#' @import rvest httr stortingscrape pscl tidyr
+#' @import rvest httr stortingscrape pscl tidyr fuzzyjoin
 #'
 #' @export
 #'
@@ -33,14 +33,27 @@ rc_get <- function(voteid = NA,
                    include_mpinfo = FALSE,
                    good_manners = 2){
 
+  message("Starting")
+
   raw_result <- list()
-  for(i in as.character(voteid)){
-    raw_result[[i]] <- get_result_vote(i)
+  message(paste0("...... Getting roll call results for ", length(voteid),
+                 " votes."))
 
-    Sys.sleep(good_manners)
+
+  if(length(voteid) > 1){
+
+    for(i in as.character(voteid)){
+      raw_result[[i]] <- get_result_vote(i)
+
+      Sys.sleep(good_manners)
+    }
+
+    raw_result <- do.call(rbind, raw_result)
+  } else if(length(voteid) == 1){
+    raw_result <- get_result_vote(voteid)
+  } else{
+    stop("'voteid' needs to be a vector of length 1 or more")
   }
-
-  raw_result <- do.call(rbind, raw_result)
 
 
   raw_result$vote[which(raw_result$vote == "ikke_tilstede")] <- -1
@@ -48,10 +61,12 @@ rc_get <- function(voteid = NA,
   raw_result$vote[which(raw_result$vote == "mot")] <- 0
 
   raw_result_wide <- raw_result %>%
+    dplyr::filter(is.na(mp_id) == FALSE) %>%
     pivot_wider(., id_cols = "mp_id",
                 names_from = "vote_id",
                 names_prefix = "voteid",
                 values_from = "vote") %>%
+    dplyr::arrange(mp_id) %>%
     data.frame()
 
   rownames(raw_result_wide) <- raw_result_wide$mp_id
@@ -60,15 +75,99 @@ rc_get <- function(voteid = NA,
 
   if(include_voteinfo == TRUE){
 
+    message(paste0("...... Getting vote information"))
+
+    data("parl_periods", package = "noRc")
+    data("vote_info", package = "noRc")
+
+
+    caseid <- vote_info$case_id[which(vote_info$vote_id %in% voteid)]
+
+    voteinfo <- lapply(caseid, function(x) get_vote(x, good_manners))
+    voteinfo <- do.call(rbind, voteinfo)
+    votedata <- voteinfo[which(voteinfo$vote_id %in% voteid), ]
+
+    votedata$case_id <- votedata$response_date <- votedata$version <- NULL
+
+    votedata <- unique(votedata)
+
+    votedata <- fuzzy_left_join(votedata, parl_periods[, c("id", "from", "to")],
+                             by = c("vote_datetime" = "from",
+                                    "vote_datetime" = "to"),
+                             match_fun = list(`>=`, `<=`)) %>%
+      dplyr::select(!c("from", "to")) %>%
+      dplyr::rename(period_id = id)
+
   } else {
+
     votedata <- NULL
+
   }
 
   if(include_mpinfo == TRUE){
 
+    message(paste0("...... Getting MP information"))
+
+    data("mp_info")
+    mp_info <- do.call(rbind, mp_info)
+
+    legisdata <- mp_info[which(mp_info$mp_id %in%
+                                 rownames(raw_result_wide)), ]
+    if(is.null(votedata)){
+      legisdata <- legisdata %>%
+        dplyr::group_by(mp_id) %>%
+        dplyr::summarize(county = paste0(unique(county), collapse = "|"),
+                         party_id = paste0(unique(party_id), collapse = "|")) %>%
+        data.frame()
+    } else {
+
+      legisdata <- legisdata[which(legisdata$parl_period_id %in% unique(votedata$period_id)), ]
+
+      legisdata <- legisdata %>%
+        dplyr::group_by(mp_id, parl_period_id) %>%
+        dplyr::summarize(county = paste0(unique(county), collapse = "|"),
+                         party_id = paste0(unique(party_id), collapse = "|"),
+                         .groups = "keep") %>%
+        data.frame()
+
+    }
+
+    if(nrow(legisdata) != length(rownames(raw_result_wide))){
+      message("............ Found missing MPs -- trying to fix")
+
+      miss_mp_ids <- setdiff(rownames(raw_result_wide), legisdata$mp_id)
+
+      miss_mps <- lapply(miss_mp_ids, function(x){
+
+        tmp <- get_mp_bio(x, good_manners)
+        tmp <- tmp$parl_periods
+        tmp$mp_id <- x
+
+        return(tmp)
+
+      })
+
+      miss_mps <- do.call(rbind, miss_mps)
+      miss_mps <- miss_mps[which(miss_mps$parl_period_id %in%
+                                   unique(votedata$period_id)), ]
+
+      miss_mps <- miss_mps %>%
+        dplyr::group_by(mp_id, parl_period_id) %>%
+        dplyr::summarize(county = paste0(unique(county), collapse = "|"),
+                         party_id = paste0(unique(party_id), collapse = "|"),
+                         .groups = "keep") %>%
+        data.frame()
+
+      legisdata <-
+        dplyr::bind_rows(legisdata, miss_mps) %>%
+        dplyr::arrange(mp_id)
+    }
+
+
   } else {
     legisdata <- NULL
   }
+
 
   rc <- rollcall(data = raw_result_wide,
                  yea = 1,
