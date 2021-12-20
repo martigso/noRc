@@ -80,27 +80,23 @@ rc_get <- function(voteid = NA,
     data("parl_periods", package = "noRc")
     data("vote_info", package = "noRc")
 
-
-    caseid <- vote_info$case_id[which(vote_info$vote_id %in% voteid)]
-
-    voteinfo <- lapply(caseid, function(x) get_vote(x, good_manners))
-    voteinfo <- do.call(rbind, voteinfo)
-    votedata <- voteinfo[which(voteinfo$vote_id %in% voteid), ]
+    votedata <- vote_info[which(vote_info$vote_id %in% voteid), ]
 
     votedata$case_id <- votedata$response_date <- votedata$version <- NULL
 
     votedata <- unique(votedata)
+    votedata$date <- as.Date(votedata$vote_datetime)
+
+    parl_periods$from <- as.Date(parl_periods$from)
+    parl_periods$to <- as.Date(parl_periods$to)
 
     votedata <- fuzzy_left_join(votedata, parl_periods[, c("id", "from", "to")],
                              by = c("vote_datetime" = "from",
                                     "vote_datetime" = "to"),
                              match_fun = list(`>=`, `<=`)) %>%
       dplyr::select(!c("from", "to")) %>%
-      dplyr::rename(period_id = id)
-
-  } else {
-
-    votedata <- NULL
+      dplyr::rename(period_id = id) %>%
+      data.frame()
 
   }
 
@@ -164,8 +160,6 @@ rc_get <- function(voteid = NA,
     }
 
 
-  } else {
-    legisdata <- NULL
   }
 
 
