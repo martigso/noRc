@@ -66,6 +66,9 @@ rc_get <- function(voteid = NA,
   raw_result$vote[which(raw_result$vote == "for")] <- 1
   raw_result$vote[which(raw_result$vote == "mot")] <- 0
 
+  # Sometimes, votes are duplicated -- I don't know why, yet.
+  raw_result <- unique(raw_result)
+
   raw_result_wide <- raw_result %>%
     dplyr::filter(is.na(mp_id) == FALSE) %>%
     pivot_wider(., id_cols = "mp_id",
