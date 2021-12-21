@@ -3,6 +3,7 @@
 export(rc_get)
 import(fuzzyjoin)
 import(httr)
+import(pbapply)
 import(pscl)
 import(rvest)
 import(stortingscrape)
