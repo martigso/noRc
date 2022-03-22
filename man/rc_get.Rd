@@ -7,16 +7,16 @@
 rc_get(voteid = NA, include_voteinfo = FALSE, include_mpinfo = FALSE)
 }
 \arguments{
-\item{voteid}{Integer. One or more vote ids to retreive from the API.}
+\item{voteid}{Integer. One or more vote ids to retrieve from the API.}
 
 \item{include_voteinfo}{Logical. Whether or not to include information on the vote.}
 
-\item{include_mpinfo}{Logical. Wheteher or not to include information on the MPs.}
+\item{include_mpinfo}{Logical. Whether or not to include information on the MPs.}
 
 \item{good_manners}{Numeric. Seconds to wait between calls to the API.
 Should be used if \code{voteid} is a vector longer than 1.}
 
-\item{...}{Other arguments passed to \code{rollcall()}}
+\item{...}{Other arguments passed to \code{\link[=rollcall]{rollcall()}}}
 }
 \value{
 A rollcall object with the specified votes
