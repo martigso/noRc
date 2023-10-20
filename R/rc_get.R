@@ -78,13 +78,13 @@ rc_get <- function(voteid = NA,
   raw_result <- unique(raw_result)
 
   # Making data frame wide and filtering out observations with missing id
-  raw_result_wide <- raw_result %>%
-    dplyr::filter(is.na(mp_id) == FALSE) %>%
-    pivot_wider(., id_cols = "mp_id",
-                names_from = "vote_id",
-                names_prefix = "voteid",
-                values_from = "vote") %>%
-    dplyr::arrange(mp_id) %>%
+  raw_result_wide <- raw_result |>
+    dplyr::filter(is.na(mp_id) == FALSE) |>
+    tidyr::pivot_wider(id_cols = "mp_id",
+                       names_from = "vote_id",
+                       names_prefix = "voteid",
+                       values_from = "vote") |>
+    dplyr::arrange(mp_id) |>
     data.frame()
 
   # Changing rownames to MP ids
@@ -125,9 +125,9 @@ rc_get <- function(voteid = NA,
                                 parl_periods[, c("id", "from", "to")],
                                 by = c("vote_datetime" = "from",
                                        "vote_datetime" = "to"),
-                                match_fun = list(`>=`, `<=`)) %>%
-      dplyr::select(!c("from", "to")) %>%
-      dplyr::rename(period_id = id) %>%
+                                match_fun = list(`>=`, `<=`)) |>
+      dplyr::select(!c("from", "to")) |>
+      dplyr::rename(period_id = id) |>
       data.frame()
 
   }
@@ -149,12 +149,12 @@ rc_get <- function(voteid = NA,
     if(is.null(votedata)){
 
       # Fix county and party id for MPs
-      legisdata <- legisdata %>%
-        dplyr::group_by(mp_id) %>%
+      legisdata <- legisdata |>
+        dplyr::group_by(mp_id) |>
         dplyr::summarize(county = paste0(unique(county),
                                          collapse = "|"),
                          party_id = paste0(unique(party_id),
-                                           collapse = "|")) %>%
+                                           collapse = "|")) |>
         data.frame()
     } else {
 
@@ -163,11 +163,11 @@ rc_get <- function(voteid = NA,
                                      unique(votedata$period_id)), ]
 
       # Fix county and party ids for MPs
-      legisdata <- legisdata %>%
-        dplyr::group_by(mp_id, parl_period_id) %>%
+      legisdata <- legisdata |>
+        dplyr::group_by(mp_id, parl_period_id) |>
         dplyr::summarize(county = paste0(unique(county), collapse = "|"),
                          party_id = paste0(unique(party_id), collapse = "|"),
-                         .groups = "keep") %>%
+                         .groups = "keep") |>
         data.frame()
 
     }
@@ -200,16 +200,16 @@ rc_get <- function(voteid = NA,
                                    unique(votedata$period_id)), ]
 
       # Fixing party id and county affiliation for missing MPs
-      miss_mps <- miss_mps %>%
-        dplyr::group_by(mp_id, parl_period_id) %>%
+      miss_mps <- miss_mps |>
+        dplyr::group_by(mp_id, parl_period_id) |>
         dplyr::summarize(county = paste0(unique(county), collapse = "|"),
                          party_id = paste0(unique(party_id), collapse = "|"),
-                         .groups = "keep") %>%
+                         .groups = "keep") |>
         data.frame()
 
       # Binding all rows of missing MPs and original MP data
       legisdata <-
-        dplyr::bind_rows(legisdata, miss_mps) %>%
+        dplyr::bind_rows(legisdata, miss_mps) |>
         dplyr::arrange(mp_id)
     }
 
@@ -217,8 +217,8 @@ rc_get <- function(voteid = NA,
     if(nrow(legisdata) != nrow(raw_result_wide)){
 
       # Collapse duplicated MPs
-      legisdata <- legisdata %>%
-        dplyr::group_by(mp_id) %>%
+      legisdata <- legisdata |>
+        dplyr::group_by(mp_id) |>
         dplyr::summarize(
           parl_period_id = paste0(unique(parl_period_id),
                                   collapse = "|"),
@@ -226,7 +226,7 @@ rc_get <- function(voteid = NA,
                           collapse = "|"),
           party_id = paste0(unique(party_id),
                             collapse = "|"),
-          .groups = "keep") %>%
+          .groups = "keep") |>
         data.frame()
     }
   }
